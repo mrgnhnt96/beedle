@@ -193,15 +193,13 @@ fn section(name: &str, outcome: &Result<String, String>) -> String {
     }
 }
 
-fn all_not_run(reason: &str) -> [(&'static str, Result<String, String>); 3] {
+type Outcomes = [(&'static str, Result<String, String>); 3];
+
+fn all_not_run(reason: &str) -> Outcomes {
     ["lighthouse", "pa11y", "linkinator"].map(|name| (name, Err(reason.to_string())))
 }
 
-fn run_tools(
-    site: &Path,
-    tools: &Tools,
-    report: &Path,
-) -> (String, [(&'static str, Result<String, String>); 3]) {
+fn run_tools(site: &Path, tools: &Tools, report: &Path) -> (String, Outcomes) {
     let serving = match Serving::start(site) {
         Ok(serving) => serving,
         Err(error) => {
