@@ -1,0 +1,9 @@
+# Spotter
+
+> Spotter is a free, open-source macOS menu bar app that watches Dart and Flutter projects and says which dependencies have new releases. Written in Swift. MIT license. Needs macOS 14 or later.
+
+It makes no network calls except to pub.dev, and has no accounts or analytics.
+
+- [Download the latest release](https://github.com/spotter-demo/spotter/releases/latest): notarized DMG, version 1.2.0
+- [Source code](https://github.com/spotter-demo/spotter)
+- [Privacy](https://spotter-demo.dev/privacy/)
