@@ -93,6 +93,10 @@ The caller takes an item off the brief once it's been dealt with, and then it's 
 
 ## 6. Report
 
+Keep it short. The caller acts on this and doesn't need your reasoning: one sentence per field, no
+background, nothing repeated from the brief, and no finding said twice. Findings with one cause are
+one finding that lists every place.
+
 The first line is exactly one of these, because the caller reads it:
 
 - `Verdict: Ready to ship`: no open Blocker or Major.
@@ -100,18 +104,20 @@ The first line is exactly one of these, because the caller reads it:
 - `Verdict: Can't ship until a person acts`: there are open Blockers or Majors and every one of
   them needs a person. Nothing the caller can do changes the answer.
 
-Open means this report's findings plus the items the brief carries. Follow the verdict with a short
-paragraph: type and state, evidence, counts by severity, and the top problem.
+Open means this report's findings plus the items the brief carries. Follow the verdict with three
+sentences at most: type and state, counts by severity, and the top problem.
 
 Then each new finding, most severe first, under a heading like `### B3 · Major · Title`. IDs carry
 on from the highest ID in the brief, and never get reused.
 
-- **Where:** page and element
-- **Evidence:** Confirmed (seen in the output or measured) or Likely
+- **Where:** page and element · Confirmed (seen in the output or measured) or Likely
 - **Problem:** what goes wrong, for whom
 - **Rule:** the reference file and rule, with its strength when it's only opinion
 - **Suggested fix:** one concrete way to solve it, with the replacement words or tag
 - **Who can act:** `Caller`, or `Person: what they must do`
+
+A Minor or Note is the heading and one line under it: where, Confirmed or Likely, the fix, and who
+can act.
 
 If the scope asks whether earlier findings are resolved, add `## Re-check` with one line each,
 Resolved or Not resolved. One that isn't resolved goes in the findings under its old ID.
@@ -126,5 +132,6 @@ If the brief carries items, list them one line each, copied unchanged:
 - B7 · Minor · Search words missing from the title
 ```
 
-Then the sections you'd cut, what works (keep this short), and *Not checked*. Separate what's
-documented from what's judgment: never present opinion as a platform rule.
+Then the sections you'd cut, what works and *Not checked*, one line per item, and two lines at most
+for what works. Leave out a section with nothing in it. Separate what's documented from what's
+judgment: never present opinion as a platform rule.

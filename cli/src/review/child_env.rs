@@ -30,6 +30,8 @@ const KEPT: &[&str] = &[
     "SSL_CERT_FILE",
     "CHROME_PATH",
 ];
+// The reviewer's turns are seconds apart, so the 1-hour tier's 2x write price buys nothing.
+const FIVE_MINUTE_CACHE: &str = "FORCE_PROMPT_CACHING_5M";
 const KEPT_PREFIXES: &[&str] = &[
     "ANTHROPIC_",
     "AWS_",
@@ -70,6 +72,12 @@ pub fn filtered(
         .collect();
     kept.extend(path.map(|value| ("PATH".into(), value)));
     kept
+}
+
+pub fn for_claude(vars: &Vars) -> Vars {
+    let mut vars = vars.clone();
+    vars.push((FIVE_MINUTE_CACHE.into(), "1".into()));
+    vars
 }
 
 pub fn current() -> Vars {

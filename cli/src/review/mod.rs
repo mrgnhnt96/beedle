@@ -5,6 +5,7 @@ mod serve;
 mod site_checks;
 #[cfg(test)]
 mod tests;
+mod usage_log;
 
 use std::env;
 use std::ffi::OsString;
@@ -257,7 +258,7 @@ fn review(args: &Args, brief_path: &Path) -> Result<u8, String> {
         cwd,
         message.as_bytes(),
         args.timeout,
-        &env,
+        &child_env::for_claude(&env),
     );
 
     let mut summary = summarise(&launched.lines);
@@ -274,6 +275,13 @@ fn review(args: &Args, brief_path: &Path) -> Result<u8, String> {
         summary.error = Value::from(js::utf16_slice(js::trim(text), 0, 500));
     }
     let read = read_report(&summary.report, &brief);
+    usage_log::record(
+        brief_path,
+        &args.model,
+        &args.effort,
+        &summary,
+        read.verdict.as_deref(),
+    );
     write_results(
         &out,
         brief_path,

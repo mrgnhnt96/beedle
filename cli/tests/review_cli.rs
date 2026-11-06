@@ -59,7 +59,8 @@ cat > "$dir/stdin"
             .arg("--skill-dir")
             .arg(REPO)
             .args(args)
-            .env("BEEDLE_CLAUDE", &self.fake);
+            .env("BEEDLE_CLAUDE", &self.fake)
+            .env("XDG_DATA_HOME", self.path("data"));
         command
     }
 
@@ -247,6 +248,67 @@ fn the_child_keeps_auth_and_drops_session_and_messaging_variables() {
     assert!(env.contains("ANTHROPIC_API_KEY=kept"), "{env}");
     assert!(env.contains("HOME="), "{env}");
     assert!(!env.contains("dropped"), "{env}");
+}
+
+#[test]
+fn the_reviewer_uses_the_five_minute_cache() {
+    let review = Review::new(SUCCESS);
+    review.run(&[]);
+    assert!(review.read("env").contains("FORCE_PROMPT_CACHING_5M=1\n"));
+}
+
+#[test]
+fn each_review_adds_a_line_to_the_usage_log() {
+    let usage = r#"printf '%s\n' '{"type":"result","subtype":"success","result":"Verdict: Fix first\n","num_turns":3,"duration_ms":2500,"total_cost_usd":0.125,"usage":{"input_tokens":10,"output_tokens":200,"cache_read_input_tokens":3000,"cache_creation":{"ephemeral_5m_input_tokens":400,"ephemeral_1h_input_tokens":0}},"modelUsage":{"opus":{"thinkingTokens":50}}}'"#;
+    let review = Review::new(usage);
+    review.run(&["--effort", "low"]);
+    review.run(&[]);
+
+    let log = review.read("data/beedle/usage.jsonl");
+    let lines: Vec<Value> = log
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+    assert_eq!(lines.len(), 2, "{log}");
+    assert!(lines[0]["at"].as_u64().unwrap() > 0);
+    assert_eq!(lines[0]["effort"], "low");
+    assert_eq!(lines[0]["brief"], review.path("brief-1.md").to_str().unwrap());
+    assert_eq!(lines[0]["verdict"], "Fix first");
+    assert_eq!(lines[0]["costUsd"], 0.125);
+    assert_eq!(
+        lines[0]["tokens"],
+        json!({
+            "input": 10,
+            "output": 200,
+            "thinking": 50,
+            "cacheRead": 3000,
+            "cacheWrite5m": 400,
+            "cacheWrite1h": 0,
+        })
+    );
+}
+
+#[test]
+fn the_usage_log_defaults_to_the_home_data_folder() {
+    let review = Review::new(SUCCESS);
+    let run = review
+        .command(&[])
+        .env_remove("XDG_DATA_HOME")
+        .env("HOME", review.home.path())
+        .output()
+        .unwrap();
+    assert_eq!(run.status.code(), Some(0), "{}", stderr(&run));
+    assert!(review.path(".local/share/beedle/usage.jsonl").is_file());
+}
+
+#[test]
+fn a_usage_log_that_cannot_be_written_does_not_fail_the_review() {
+    let review = Review::new(SUCCESS);
+    fs::write(review.path("data"), "a file, not a folder").unwrap();
+    let run = review.run(&[]);
+    assert_eq!(run.status.code(), Some(0), "{}", stderr(&run));
+    assert!(stderr(&run).contains("can't log usage to"));
+    assert!(review.path("review-1.md").exists());
 }
 
 #[test]
@@ -481,6 +543,7 @@ fn the_skill_folder_defaults_to_the_one_under_home() {
         .arg(review.path("brief-1.md"))
         .env("BEEDLE_CLAUDE", &review.fake)
         .env("HOME", review.home.path())
+        .env_remove("XDG_DATA_HOME")
         .output()
         .unwrap();
     assert_eq!(run.status.code(), Some(0), "{}", stderr(&run));

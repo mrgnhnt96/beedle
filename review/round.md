@@ -64,7 +64,8 @@ Add another `--add-dir` if the built site is outside the project. Run it in the 
 wait for it. It starts a lean headless Claude that has never seen this conversation, and writes
 `review-1.md` beside the brief, plus `review-1.json` with the cost, the verdict and `repeated`: any
 handed-over item the report listed again. It should be empty. If it isn't, ignore those findings
-and tell the user the run paid for them twice.
+and tell the user the run paid for them twice. Every run also adds a line with its token usage to
+`~/.local/share/beedle/usage.jsonl` (under `$XDG_DATA_HOME` if that's set), outside any project.
 
 If `beedle` isn't on the PATH or the review can't start, use a general-purpose agent (not a fork,
 which shares your context) with the same brief, starting with: "Read method.md and checklist.md in
