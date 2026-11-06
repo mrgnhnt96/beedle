@@ -91,26 +91,24 @@ first trial, the README called a blank image a real screenshot.
 
 ## 8. Performance, links and accessibility
 
-Serve the build locally, such as `python3 -m http.server --directory <dir> 8123`, then run:
+`beedle review` runs Lighthouse, pa11y and linkinator against the built site before it starts you,
+and the prompt names the results in a line starting `Pass 8 results:`. Read that file. You can't
+serve the site or run these tools yourself.
 
-```sh
-npx --yes lighthouse http://localhost:8123 --quiet --chrome-flags="--headless" \
-  --only-categories=performance,accessibility,best-practices,seo --output=json \
-  --output-path=<tmp>/lh.json
-npx --yes pa11y http://localhost:8123
-npx --yes linkinator http://localhost:8123 --recurse --skip '^https?://(?!localhost)'
-```
+Report failures rather than scores. Lighthouse's SEO score is shallow: it gave 0.92 to a test page
+with a broken link and missing alt text, so don't treat a high score as a pass. Linkinator covers
+internal links only, because the audit already checked the external ones.
 
-Linkinator covers internal links only, because the audit already checked the external ones. Report
-failures rather than scores. Lighthouse's SEO score is shallow: it gave 0.92 to a test page
-with a broken link and missing alt text, so don't treat a high score as a pass. A local run says
-nothing about real-user Core Web Vitals, so list those under *Not checked*.
+A tool marked `Not run` goes under *Not checked* with the reason the file gives. If the prompt
+names no results file, all three do. A local run says nothing about real-user Core Web Vitals, so
+list those under *Not checked*.
 
 ## 9. Layout
 
-Check for horizontal overflow and an unreachable CTA at 320, 390, 768 and 1440 wide, if you can
-drive a browser. Tab through to the primary CTA. Honour reduced motion. For a full inspection of
-interactive sections, recommend `ultrahand:review` in the report.
+You can't drive a browser, so horizontal overflow and an unreachable CTA at 320, 390, 768 and 1440
+wide, tabbing through to the primary CTA, and reduced motion all go under *Not checked*. Flag what
+the source shows, such as a fixed width or animation with no reduced-motion rule, as Likely. For a
+full inspection of layout and interactive sections, recommend `ultrahand:review` in the report.
 
 ## Always under Not checked
 

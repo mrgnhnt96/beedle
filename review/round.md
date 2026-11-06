@@ -50,6 +50,10 @@ Handed to a person: <"none", or each item on its own line below this one, "ID ·
 Return the method's report. Name any problem outside the scope that you happen to see, but don't go looking for one.
 ```
 
+The reviewer can't build anything, so build the site first and always name the output under *Built
+site*. `beedle review` serves that folder for the performance, links and accessibility pass; add
+`--skip-site-checks` on an offline machine, and the reviewer lists that pass under *Not checked*.
+
 ## 3. Run it
 
 ```sh

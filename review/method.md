@@ -33,7 +33,7 @@ can confirm:
   and mark anything about the output as Likely. Everything that needs the output goes under *Not
   checked*: the audit, the performance, links and accessibility pass, and anything else you could
   only confirm from built files.
-- **Live URL:** check it with `curl`, and say so.
+- **Live URL:** check it with `beedle fetch <url>`, and say so.
 
 Read `docs/marketing/page-brief.md` and `design/LESSONS.md` if they exist. With no brief, infer
 the type, audience and one job from the page, and list that as a finding (no claims record).

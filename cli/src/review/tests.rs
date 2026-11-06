@@ -1,10 +1,12 @@
+use std::ffi::OsString;
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use serde_json::json;
 
+use super::child_env::filtered;
 use super::report::{handed_over, read_report, summarise};
-use super::{FILES, TOOLS, claude_args, default_out, system_prompt};
+use super::{ALLOWED, FILES, TOOLS, claude_args, default_out, system_prompt};
 
 const BRIEF: &str = "Scope: the whole site\n\
 Handed to a person: B1 · Blocker · Dead links · Owner: publish it\n\
@@ -142,6 +144,96 @@ fn the_reviewer_starts_with_no_settings_mcp_servers_or_session() {
     assert_eq!(args[tools + 1], TOOLS);
     assert_eq!(TOOLS, "Read,Glob,Grep,Bash");
     assert!(args.iter().any(|arg| arg == "/p"));
+}
+
+#[test]
+fn the_reviewer_can_only_read_audit_and_fetch() {
+    let args = claude_args(Path::new("s"), "opus", "", &[], Path::new("/root"));
+    let allowed = args.iter().position(|arg| arg == "--allowedTools").unwrap();
+    assert_eq!(args[allowed + 1], ALLOWED);
+    assert_eq!(
+        ALLOWED,
+        "Read,Glob,Grep,Bash(beedle audit *),Bash(beedle fetch *)"
+    );
+    let mode = args
+        .iter()
+        .position(|arg| arg == "--permission-mode")
+        .unwrap();
+    assert_eq!(args[mode + 1], "dontAsk");
+    for tool in ["Write", "Edit", "NotebookEdit"] {
+        assert!(!TOOLS.contains(tool) && !ALLOWED.contains(tool), "{tool}");
+    }
+}
+
+#[test]
+fn the_reviewer_is_told_what_its_bash_can_run() {
+    let prompt = system_prompt(repo()).unwrap();
+    for text in [
+        "You can't edit, build or serve anything",
+        "beedle audit --dir <built site>",
+        "beedle fetch <url>",
+        "*Not checked*, with the reason",
+    ] {
+        assert!(prompt.contains(text), "{text}");
+    }
+}
+
+fn vars(pairs: &[(&str, &str)]) -> Vec<(OsString, OsString)> {
+    pairs
+        .iter()
+        .map(|(name, value)| (name.into(), value.into()))
+        .collect()
+}
+
+#[test]
+fn session_and_messaging_variables_stay_out_of_the_child() {
+    let kept = filtered(
+        vars(&[
+            ("HOME", "/h"),
+            ("PATH", "/bin"),
+            ("ANTHROPIC_API_KEY", "k"),
+            ("CLAUDE_CODE_OAUTH_TOKEN", "t"),
+            ("CLAUDE_CONFIG_DIR", "/c"),
+            ("CLAUDE_CODE_USE_BEDROCK", "1"),
+            ("AWS_PROFILE", "p"),
+            ("CLAUDECODE", "1"),
+            ("CLAUDE_CODE_SESSION_ID", "s"),
+            ("CLAUDE_CODE_MESSAGING_SOCKET", "/m"),
+            ("CLAUDE_CODE_MESSAGING_TOKEN", "m"),
+            ("CLAUDE_CODE_CHILD_SESSION", "1"),
+            ("MIDNA_SESSION", "s"),
+            ("MIDNA_SOCKET", "/s"),
+            ("SSH_AUTH_SOCK", "/a"),
+            ("GITHUB_TOKEN", "g"),
+        ])
+        .into_iter(),
+        None,
+    );
+    let names: Vec<_> = kept
+        .iter()
+        .map(|(name, _)| name.to_str().unwrap())
+        .collect();
+    assert_eq!(
+        names,
+        [
+            "HOME",
+            "ANTHROPIC_API_KEY",
+            "CLAUDE_CODE_OAUTH_TOKEN",
+            "CLAUDE_CONFIG_DIR",
+            "CLAUDE_CODE_USE_BEDROCK",
+            "AWS_PROFILE",
+            "PATH",
+        ]
+    );
+}
+
+#[test]
+fn the_running_beedle_comes_first_on_the_childs_path() {
+    let kept = filtered(
+        vars(&[("PATH", "/usr/bin:/bin")]).into_iter(),
+        Some(Path::new("/installed")),
+    );
+    assert_eq!(kept, vars(&[("PATH", "/installed:/usr/bin:/bin")]));
 }
 
 #[test]
