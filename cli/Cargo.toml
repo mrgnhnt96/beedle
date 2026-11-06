@@ -1,0 +1,21 @@
+[package]
+name = "beedle"
+version = "0.1.0"
+edition = "2024"
+description = "Audits a built marketing site and reviews it in a lean headless Claude"
+license = "MIT"
+publish = false
+
+[[bin]]
+name = "beedle"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+flate2 = { version = "1", default-features = false, features = ["zlib"] }
+libc = "0.2"
+regex = "1"
+serde_json = { version = "1", features = ["preserve_order"] }
+tempfile = "3"
+ureq = "3"
+url = "2"
