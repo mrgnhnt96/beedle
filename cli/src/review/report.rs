@@ -1,4 +1,4 @@
-use serde_json::Value;
+use serde_json::{Value, json};
 
 use crate::js::{self, re};
 
@@ -14,6 +14,7 @@ pub struct Summary {
     pub turns: Value,
     pub seconds: i64,
     pub cost_usd: Value,
+    pub tokens: Value,
     pub error: Value,
 }
 
@@ -34,6 +35,23 @@ fn number_or_zero(value: &Value) -> Value {
     }
 }
 
+fn tokens_of(event: &Value) -> Value {
+    let usage = &event["usage"];
+    let writes = &usage["cache_creation"];
+    let models = event["modelUsage"].as_object().into_iter().flatten();
+    let thinking: f64 = models
+        .filter_map(|(_, model)| model["thinkingTokens"].as_f64())
+        .sum();
+    json!({
+        "input": number_or_zero(&usage["input_tokens"]),
+        "output": number_or_zero(&usage["output_tokens"]),
+        "thinking": thinking as i64,
+        "cacheRead": number_or_zero(&usage["cache_read_input_tokens"]),
+        "cacheWrite5m": number_or_zero(&writes["ephemeral_5m_input_tokens"]),
+        "cacheWrite1h": number_or_zero(&writes["ephemeral_1h_input_tokens"]),
+    })
+}
+
 pub fn summarise(lines: &[String]) -> Summary {
     let mut out = Summary {
         ok: false,
@@ -41,6 +59,7 @@ pub fn summarise(lines: &[String]) -> Summary {
         turns: Value::from(0),
         seconds: 0,
         cost_usd: Value::from(0),
+        tokens: Value::Null,
         error: Value::Null,
     };
     let mut last_text = String::new();
@@ -64,6 +83,7 @@ pub fn summarise(lines: &[String]) -> Summary {
             let milliseconds = event["duration_ms"].as_f64().unwrap_or(0.0);
             out.seconds = js::round(milliseconds / 1000.0) as i64;
             out.cost_usd = number_or_zero(&event["total_cost_usd"]);
+            out.tokens = tokens_of(&event);
             if !out.ok {
                 out.error = match &event["subtype"] {
                     Value::Null => Value::from("error"),
