@@ -5,7 +5,7 @@ Skip anything the brief lists as *Handed to a person* or *Still open*.
 
 ## 1. Crawlable
 
-- Run `audit.mjs`. Confirm each error. It covers blank images and dead external links, so don't
+- Run `beedle audit`. Confirm each error. It covers blank images and dead external links, so don't
   repeat that work by hand.
 - Fetch or read the raw HTML with no JavaScript. Are the H1, body copy, CTA and links all there?
   This approximates crawlers that don't run JS.

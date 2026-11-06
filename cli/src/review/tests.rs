@@ -1,3 +1,4 @@
+use std::fs;
 use std::path::{Path, PathBuf};
 
 use serde_json::json;
@@ -15,11 +16,15 @@ fn repo() -> &'static Path {
     Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap()
 }
 
+fn read(rel: &str) -> String {
+    fs::read_to_string(repo().join(rel)).unwrap()
+}
+
 #[test]
-fn the_reviewer_gets_the_skill_checklist_and_rules() {
+fn the_reviewer_gets_the_method_checklist_and_rules() {
     let prompt = system_prompt(repo()).unwrap();
     for text in [
-        "review/SKILL.md",
+        "review/method.md",
         "review/checklist.md",
         "reference/seo.md",
         "reference/message.md",
@@ -29,7 +34,79 @@ fn the_reviewer_gets_the_skill_checklist_and_rules() {
 }
 
 #[test]
+fn the_system_prompt_holds_the_method_text() {
+    let prompt = system_prompt(repo()).unwrap();
+    for text in [
+        "## 1. Get the evidence",
+        "You can't build anything.",
+        "beedle audit --dir <built site>",
+        "## 4. Rate each finding",
+        "## 6. Report",
+    ] {
+        assert!(prompt.contains(text), "{text}");
+    }
+}
+
+#[test]
+fn the_reviewer_is_not_sent_the_launcher() {
+    let prompt = system_prompt(repo()).unwrap();
+    assert!(!prompt.contains("review/SKILL.md"));
+    assert!(!prompt.contains("name: beedle-review"));
+    assert!(!prompt.contains("beedle review --brief"));
+}
+
+#[test]
+fn the_system_prompt_names_neither_old_script() {
+    let prompt = system_prompt(repo()).unwrap();
+    for script in ["audit.mjs", "run.mjs"] {
+        assert!(!prompt.contains(script), "{script}");
+    }
+}
+
+#[test]
+fn the_callers_files_name_neither_old_script() {
+    for rel in ["SKILL.md", "review/SKILL.md", "review/round.md"] {
+        let text = read(rel);
+        for script in ["audit.mjs", "run.mjs"] {
+            assert!(!text.contains(script), "{rel}: {script}");
+        }
+    }
+}
+
+#[test]
+fn the_launcher_holds_none_of_the_method() {
+    let launcher = read("review/SKILL.md");
+    assert!(launcher.contains("beedle review --brief"));
+    for text in [
+        "Rate each finding",
+        "Verdict: Ready to ship",
+        "beedle audit",
+    ] {
+        assert!(!launcher.contains(text), "{text}");
+    }
+}
+
+#[test]
+fn the_fallback_reads_the_method_and_never_loads_the_skill() {
+    let round = read("review/round.md");
+    assert!(round.contains("Read method.md and checklist.md"));
+    assert!(!round.contains("Load the beedle-review skill"));
+    assert!(!round.contains("review it yourself"));
+    assert!(!round.contains("with the beedle-review skill"));
+}
+
+#[test]
 fn the_rule_files_keep_their_order() {
+    assert_eq!(
+        FILES,
+        [
+            "review/method.md",
+            "review/checklist.md",
+            "reference/page-types.md",
+            "reference/message.md",
+            "reference/seo.md",
+        ]
+    );
     let prompt = system_prompt(repo()).unwrap();
     let places: Vec<usize> = FILES
         .iter()
@@ -42,7 +119,7 @@ fn the_rule_files_keep_their_order() {
 fn a_missing_rule_file_is_named() {
     let empty = tempfile::tempdir().unwrap();
     let error = system_prompt(empty.path()).unwrap_err();
-    assert!(error.contains("review/SKILL.md"), "{error}");
+    assert!(error.contains("review/method.md"), "{error}");
 }
 
 #[test]
@@ -138,7 +215,7 @@ fn the_output_sits_beside_the_brief() {
 fn the_reviewer_is_told_it_never_fixes_anything() {
     let prompt = system_prompt(repo()).unwrap();
     for text in [
-        "This skill never fixes anything",
+        "This review never fixes anything",
         "**Suggested fix:**",
         "Verdict: Can't ship until a person acts",
         "Handed to a person",
