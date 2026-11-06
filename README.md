@@ -22,6 +22,7 @@ Follow [INSTALL.md](INSTALL.md), or ask Claude Code to.
 - `review/SKILL.md`: the `beedle-review` skill, which reviews one and never fixes anything
 - `review/checklist.md`, `review/round.md`: every check, and how each round is reviewed
 - `review/audit.mjs`, `review/run.mjs`: the audit, and the runner that starts the fresh reviewer
+- `cli/`: the same audit and runner as a Rust binary, `beedle audit` and `beedle review`
 - `reference/`: page types, message, SEO, a small theme, and the sources behind the rules
 - `tests/`: tests for the audit and the runner, and Spotter, a made-up product used as a test site
 
@@ -32,6 +33,12 @@ node --test tests/*.test.mjs
 ```
 
 Name the files: a bare `tests/` directory argument fails.
+
+```sh
+cargo test --manifest-path cli/Cargo.toml
+```
+
+These also run both versions side by side and compare their output while the scripts are in the repo.
 
 ## License
 

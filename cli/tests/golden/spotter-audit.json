@@ -1,0 +1,78 @@
+{
+  "pages": 3,
+  "indexable": 2,
+  "analytics": [],
+  "findings": [
+    {
+      "level": "error",
+      "where": "index.html",
+      "message": "Image looks blank: /assets/menu-1.2.0-1600.webp is 1600x1000 in 110 bytes, too little to hold a picture"
+    },
+    {
+      "level": "error",
+      "where": "index.html",
+      "message": "Image looks blank: /assets/menu-1.2.0-800.webp is 800x500 in 62 bytes, too little to hold a picture"
+    }
+  ],
+  "links": [
+    {
+      "url": "https://github.com/spotter-demo/spotter",
+      "pages": [
+        "index.html",
+        "privacy/index.html"
+      ]
+    },
+    {
+      "url": "https://github.com/spotter-demo/spotter/releases/latest",
+      "pages": [
+        "index.html"
+      ]
+    },
+    {
+      "url": "https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution",
+      "pages": [
+        "index.html"
+      ]
+    },
+    {
+      "url": "https://github.com/spotter-demo/spotter/releases",
+      "pages": [
+        "index.html"
+      ]
+    },
+    {
+      "url": "https://spotter-demo.dev/",
+      "pages": [
+        "index.html"
+      ]
+    },
+    {
+      "url": "https://spotter-demo.dev/assets/og-v1.png",
+      "pages": [
+        "index.html",
+        "privacy/index.html"
+      ]
+    },
+    {
+      "url": "https://spotter-demo.dev/assets/icon-v1.png",
+      "pages": [
+        "index.html"
+      ]
+    },
+    {
+      "url": "https://opensource.org/license/mit",
+      "pages": [
+        "index.html"
+      ]
+    },
+    {
+      "url": "https://spotter-demo.dev/privacy/",
+      "pages": [
+        "privacy/index.html"
+      ]
+    }
+  ],
+  "ownHosts": [
+    "spotter-demo.dev"
+  ]
+}
