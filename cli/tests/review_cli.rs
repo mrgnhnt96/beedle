@@ -343,7 +343,7 @@ fn a_skill_folder_without_a_rule_file_is_said_plainly() {
     fs::create_dir(&empty).unwrap();
     let run = review.run(&["--skill-dir", empty.to_str().unwrap()]);
     assert_eq!(run.status.code(), Some(1));
-    assert!(stderr(&run).contains("review/SKILL.md"));
+    assert!(stderr(&run).contains("review/method.md"));
     assert!(!review.path("args").exists());
 }
 

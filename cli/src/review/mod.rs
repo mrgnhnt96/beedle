@@ -34,7 +34,7 @@ const LEAN_ARGS: &[&str] = &[
     "dontAsk",
 ];
 const FILES: &[&str] = &[
-    "review/SKILL.md",
+    "review/method.md",
     "review/checklist.md",
     "reference/page-types.md",
     "reference/message.md",
@@ -88,8 +88,8 @@ fn system_prompt(root: &Path) -> Result<String, String> {
     let mut parts = vec![
         "# Beedle reviewer".to_string(),
         String::new(),
-        "You review marketing pages, with no conversation before this one. The beedle-review skill,".to_string(),
-        "its checklist and the rules are below: follow the skill. Wherever they say".to_string(),
+        "You review marketing pages, with no conversation before this one. The review method,".to_string(),
+        "its checklist and the rules are below: follow the method. Wherever they say".to_string(),
         format!(
             "~/.claude/skills/beedle/, use {}/ instead. Skills can't be loaded here; this is the",
             root.display()

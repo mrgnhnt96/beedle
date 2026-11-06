@@ -35,7 +35,7 @@ template and add nothing else. Never say why you made a choice, what you changed
 words, what to look at "in particular", or how good you think it is. The diff shows what changed.
 
 ```text
-Review a marketing page with the beedle-review skill. Don't edit any files.
+Review a marketing page by the beedle review method. Don't edit any files.
 
 Project: <absolute path>
 Built site: <absolute path to the build output>
@@ -47,13 +47,13 @@ Scope: <"the whole site" | "the changes in <absolute path to the diff> and every
 Still open from the last round: <one line each, "ID · severity · title", with the user's words if kept on purpose, or "none">
 Handed to a person: <"none", or each item on its own line below this one, "ID · severity · title · who: what they must do">
 
-Return the skill's report. Name any problem outside the scope that you happen to see, but don't go looking for one.
+Return the method's report. Name any problem outside the scope that you happen to see, but don't go looking for one.
 ```
 
 ## 3. Run it
 
 ```sh
-node ~/.claude/skills/beedle/review/run.mjs --brief <round>/brief-1.md --add-dir <project>
+beedle review --brief <round>/brief-1.md --add-dir <project>
 ```
 
 Add another `--add-dir` if the built site is outside the project. Run it in the background and
@@ -62,10 +62,14 @@ wait for it. It starts a lean headless Claude that has never seen this conversat
 handed-over item the report listed again. It should be empty. If it isn't, ignore those findings
 and tell the user the run paid for them twice.
 
-If the runner can't start, use a general-purpose agent (not a fork, which shares your context) with
-the same brief, starting with: "Load the beedle-review skill with the Skill tool, then follow it."
-If neither works, review it yourself as a separate pass and tell the user the review wasn't
-independent.
+If `beedle` isn't on the PATH or the review can't start, use a general-purpose agent (not a fork,
+which shares your context) with the same brief, starting with: "Read method.md and checklist.md in
+~/.claude/skills/beedle/review/, then follow them. Don't load the beedle-review skill, which only
+starts another review." The agent reads those files, never you. Its reply is the report: save it as
+`review-1.md`. There's no `review-1.json`, so say the cost isn't known.
+
+If that can't start either, stop and tell the user the review didn't run and the page isn't
+reviewed. Never review it in this session.
 
 ## 4. Act on the findings
 
@@ -94,7 +98,7 @@ fake value or softer wording. For each one:
 - Tell the user who must do what.
 - Copy it unchanged into the next brief's `Handed to a person` block, so no later round pays to
   find it again, and into *Waiting on a person* in the page brief, because round folders are
-  temporary. Put each item on its own line, and keep the blank line after the block: the runner
+  temporary. Put each item on its own line, and keep the blank line after the block: `beedle review`
   reads up to it.
 - Once the person has acted, take it off both. That's a new round, and the review checks it. If
   they've done only part of it, keep the item in both places, cut down to what's left.

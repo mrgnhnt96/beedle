@@ -96,10 +96,11 @@ read it.
 Build the site and run the audit on the built output, then fix every error you can:
 
 ```sh
-node ~/.claude/skills/beedle/review/audit.mjs --dir <built site>
+beedle audit --dir <built site>
 ```
 
-Add `--exclude docs` for each section that is not marketing (repeatable).
+Add `--exclude docs` for each section that is not marketing (repeatable). If `beedle` isn't on the
+PATH, tell the user the audit didn't run and that [INSTALL.md](INSTALL.md) says how to add it.
 
 An error only a person can clear stays, such as a `DOMAIN_TODO` sentinel for a domain nobody has
 bought. Never swap in a fake value to get a clean run. Make sure it's under *Waiting on a person*,
@@ -114,8 +115,7 @@ and say that you skipped it.
 
 Start it yourself, without being asked. You can't review your own page fairly: you see what you
 meant to build. Follow [review/round.md](review/round.md). In short, write the brief, run
-`node ~/.claude/skills/beedle/review/run.mjs --brief <brief> --add-dir <project>` in the background,
-then act on the findings. Don't publish, deploy or call the page done before this.
+`beedle review --brief <brief> --add-dir <project>` in the background, then act on the findings. Don't publish, deploy or call the page done before this.
 
 ## 8. Report
 
