@@ -1,5 +1,8 @@
+mod child_env;
 mod launcher;
 mod report;
+mod serve;
+mod site_checks;
 #[cfg(test)]
 mod tests;
 
@@ -17,6 +20,7 @@ use crate::js;
 use report::{Summary, read_report, summarise};
 
 const TOOLS: &str = "Read,Glob,Grep,Bash";
+const ALLOWED: &str = "Read,Glob,Grep,Bash(beedle audit *),Bash(beedle fetch *)";
 const LEAN_ARGS: &[&str] = &[
     "--setting-sources",
     "",
@@ -29,7 +33,7 @@ const LEAN_ARGS: &[&str] = &[
     "--tools",
     TOOLS,
     "--allowedTools",
-    TOOLS,
+    ALLOWED,
     "--permission-mode",
     "dontAsk",
 ];
@@ -40,7 +44,8 @@ const FILES: &[&str] = &[
     "reference/message.md",
     "reference/seo.md",
 ];
-const USAGE: &str = "usage: beedle review --brief <file> [--out <path>] [--add-dir <dir>]...";
+const USAGE: &str =
+    "usage: beedle review --brief <file> [--out <path>] [--add-dir <dir>]... [--skip-site-checks]";
 
 #[derive(ClapArgs)]
 #[command(args_override_self = true)]
@@ -66,10 +71,15 @@ pub struct Args {
     /// The beedle skill folder. Defaults to ~/.claude/skills/beedle
     #[arg(long, allow_hyphen_values = true)]
     skill_dir: Option<PathBuf>,
+    /// Don't run lighthouse, pa11y and linkinator. The reviewer lists them under Not checked
+    #[arg(long)]
+    skip_site_checks: bool,
 }
 
 fn minutes(text: &str) -> Result<Duration, String> {
-    let value: f64 = text.parse().map_err(|_| format!("{text} is not a number"))?;
+    let value: f64 = text
+        .parse()
+        .map_err(|_| format!("{text} is not a number"))?;
     Duration::try_from_secs_f64(value * 60.0).map_err(|error| error.to_string())
 }
 
@@ -95,11 +105,18 @@ fn system_prompt(root: &Path) -> Result<String, String> {
             root.display()
         ),
         "whole of it. The user message is the brief. Answer with the report only.".to_string(),
+        String::new(),
+        "You can't edit, build or serve anything. There's no Write or Edit tool, and Bash runs only".to_string(),
+        "`beedle audit` and `beedle fetch`, each as one plain command with no pipes, redirects or".to_string(),
+        "`&&`. Everything else is denied, so don't retry it. Whatever the rules below show, run the".to_string(),
+        "audit as `beedle audit --dir <built site>`, and check a live URL with `beedle fetch <url>`,".to_string(),
+        "or `beedle fetch --head <url>` for just the status and headers. It shows redirects without".to_string(),
+        "following them. A check that needs anything else goes under *Not checked*, with the reason.".to_string(),
     ];
     for rel in FILES {
         let path = root.join(rel);
-        let bytes = fs::read(&path)
-            .map_err(|error| format!("can't read {}: {error}", path.display()))?;
+        let bytes =
+            fs::read(&path).map_err(|error| format!("can't read {}: {error}", path.display()))?;
         parts.push(String::new());
         parts.push(format!("<file path=\"{rel}\">"));
         parts.push(js::trim_end(&String::from_utf8_lossy(&bytes)).to_string());
@@ -194,16 +211,27 @@ fn write_results(
     fs::write(&path, text + "\n").map_err(|error| failed(&path, error))
 }
 
+fn run_site_checks(
+    brief: &str,
+    base: &Path,
+    skip: bool,
+    out: &Path,
+    results: &Path,
+    env: &child_env::Vars,
+) -> Result<(), String> {
+    if let Some(parent) = out.parent() {
+        fs::create_dir_all(parent)
+            .map_err(|error| format!("can't write {}: {error}", parent.display()))?;
+    }
+    let site = site_checks::site_to_check(brief, base, skip);
+    site_checks::write_results(site, results, &with_suffix(out, ".lighthouse.json"), env)
+}
+
 fn review(args: &Args, brief_path: &Path) -> Result<u8, String> {
     let brief_bytes = fs::read(brief_path)
         .map_err(|error| format!("can't read {}: {error}", brief_path.display()))?;
     let brief = String::from_utf8_lossy(&brief_bytes);
-    let out = js::resolve(
-        &args
-            .out
-            .clone()
-            .unwrap_or_else(|| default_out(brief_path)),
-    );
+    let out = js::resolve(&args.out.clone().unwrap_or_else(|| default_out(brief_path)));
     let root = skill_dir(args.skill_dir.as_deref())?;
     let add_dirs: Vec<PathBuf> = args.add_dirs.iter().map(|dir| js::resolve(dir)).collect();
 
@@ -219,7 +247,18 @@ fn review(args: &Args, brief_path: &Path) -> Result<u8, String> {
 
     let cwd = js::resolve(brief_path);
     let cwd = cwd.parent().unwrap_or(Path::new("/"));
-    let launched = launcher::run(&program(), &claude, cwd, brief.as_bytes(), args.timeout);
+    let env = child_env::current();
+    let results = with_suffix(&out, ".site-checks.md");
+    run_site_checks(&brief, cwd, args.skip_site_checks, &out, &results, &env)?;
+    let message = format!("{brief}\n\nPass 8 results: {}\n", results.display());
+    let launched = launcher::run(
+        &program(),
+        &claude,
+        cwd,
+        message.as_bytes(),
+        args.timeout,
+        &env,
+    );
 
     let mut summary = summarise(&launched.lines);
     if launched.code != 0 {
@@ -282,4 +321,3 @@ pub fn run(args: Args) -> u8 {
         1
     })
 }
-

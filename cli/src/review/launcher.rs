@@ -137,11 +137,14 @@ pub fn run(
     cwd: &Path,
     input: &[u8],
     timeout: Duration,
+    env: &[(OsString, OsString)],
 ) -> Outcome {
     forward_signals();
     let spawned = Command::new(program)
         .args(args)
         .current_dir(cwd)
+        .env_clear()
+        .envs(env.iter().map(|(name, value)| (name, value)))
         .process_group(0)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
